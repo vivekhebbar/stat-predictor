@@ -17,8 +17,8 @@ def populateRoster():
 	token = new_query.set_token(accessToken)
 	# Query stattleship for NFL teams
 	teams = new_query.ss_get_results(sport='football',league='nfl',ep='teams')
-	# Construct list of all  team_slugs
-	team_slugs = [item['slug'] for item in teams[0]['teams']]
+	# Construct dictionary of all team_slugs and each matching team_id
+	team_slugs = {item['slug'] : item['id'] for item in teams[0]['teams']}
 	# Open DB connection and create roster table
 	conn = sqlite3.connect('nfl.db')
 	c = conn.cursor()
@@ -26,7 +26,7 @@ def populateRoster():
 		team text, position text, slug text, id text PRIMARY KEY)''')
 	conn.commit()
 	# Loop through each team in team_slugs
-	for team in team_slugs:
+	for team in team_slugs.keys():
 		# player_records will contain all of the team's player records to be inserted
 		# into roster at end of for loop
 		player_records = []
@@ -47,6 +47,9 @@ def populateRoster():
 						team, player['position_abbreviation'], player['slug'], \
 						player['id'])
 					player_records += [record]
+		# create one record for team's D/ST
+		defense = (team, 'D/ST', team, 'D/ST', team, team_slugs[team])
+		player_records += [defense]
 		# Insert team's player records, commit
 		sql_stmt = "INSERT OR REPLACE INTO roster VALUES (?, ?, ?, ?, ?, ?)"
 		c.executemany(sql_stmt, player_records)
@@ -58,3 +61,18 @@ def populateRoster():
 	print "There are " + str(num_records) + " records in the roster table."
 	# Upon looping through all teams, close DBconnection
 	conn.close()
+
+# This function builds the gamelog table, which contains record entries
+# for all game performances for all current players in the form:
+# (player id, , , , , )
+def populateGameLog():
+	return None
+
+# This function adds player logs for games that happened on 
+# date - note that this function assumes that there is an existing
+# gamelog table that has been populated with populateGameLog(), and
+# that this function solely exists to incrementally add recent logs 
+# to an existing log table.
+def updateGameLog(date):
+	return None
+
